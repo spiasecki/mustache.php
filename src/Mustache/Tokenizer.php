@@ -85,6 +85,8 @@ class Tokenizer
     /**
      * Scan and tokenize template source.
      *
+     * @throws \Mustache\Exception\SyntaxException when mismatched section tags are encountered.
+     *
      * @param string $text       Mustache template source to tokenize
      * @param string $delimiters Optionally, pass initial opening and closing delimiters (default: null)
      *
@@ -152,7 +154,7 @@ class Tokenizer
 
                 default:
                     if ($this->tagChange($this->ctag, $this->ctagLen, $text, $i)) {
-                        $this->tokens[] = array(
+                        $token = array(
                             self::TYPE  => $this->tagType,
                             self::NAME  => trim($this->buffer),
                             self::OTAG  => $this->otag,
@@ -161,20 +163,40 @@ class Tokenizer
                             self::INDEX => ($this->tagType === self::T_END_SECTION) ? $this->seenTag - $this->otagLen : $i + $this->ctagLen
                         );
 
-                        $this->buffer = '';
-                        $i += $this->ctagLen - 1;
-                        $this->state = self::IN_TEXT;
                         if ($this->tagType === self::T_UNESCAPED) {
+                            // Clean up `{{{ tripleStache }}}` style tokens.
                             if ($this->ctag === '}}') {
-                                $i++;
+                                if (($i + 2 < $len) && $text[$i + 2] === '}') {
+                                    $i++;
+                                } else {
+                                    $msg = sprintf(
+                                        'Mismatched tag delimiters: %s on line %d',
+                                        $token[self::NAME],
+                                        $token[self::LINE]
+                                    );
+
+                                    throw new \Mustache\Exception\SyntaxException($msg, $token);
+                                }
                             } else {
-                                // Clean up `{{{ tripleStache }}}` style tokens.
-                                $lastName = $this->tokens[count($this->tokens) - 1][self::NAME];
+                                $lastName = $token[self::NAME];
                                 if (substr($lastName, -1) === '}') {
-                                    $this->tokens[count($this->tokens) - 1][self::NAME] = trim(substr($lastName, 0, -1));
+                                    $token[self::NAME] = trim(substr($lastName, 0, -1));
+                                } else {
+                                    $msg = sprintf(
+                                        'Mismatched tag delimiters: %s on line %d',
+                                        $token[self::NAME],
+                                        $token[self::LINE]
+                                    );
+
+                                    throw new \Mustache\Exception\SyntaxException($msg, $token);
                                 }
                             }
                         }
+
+                        $this->buffer = '';
+                        $i += $this->ctagLen - 1;
+                        $this->state = self::IN_TEXT;
+                        $this->tokens[] = $token;
                     } else {
                         $this->buffer .= $text[$i];
                     }

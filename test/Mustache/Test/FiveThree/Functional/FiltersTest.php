@@ -47,7 +47,7 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
             array(
                 '{{% FILTERS }}{{ date | longdate }}',
                 $helpers,
-                (object) array('date' => new \DateTime('1/1/2000')),
+                (object) array('date' => new \DateTime('1/1/2000', new \DateTimeZone("UTC"))),
                 '2000-01-01 12:01:00'
             ),
 
@@ -73,7 +73,7 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
         });
 
         $foo = new \StdClass;
-        $foo->date = new \DateTime('1/1/2000');
+        $foo->date = new \DateTime('1/1/2000', new \DateTimeZone("UTC"));
 
         $this->assertEquals('[[2000-01-01 12:01:00]]', $tpl->render($foo));
     }
