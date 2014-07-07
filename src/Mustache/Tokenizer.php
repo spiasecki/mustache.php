@@ -1,4 +1,5 @@
 <?php
+namespace Mustache;
 
 /*
  * This file is part of Mustache.php.
@@ -14,7 +15,7 @@
  *
  * This class is responsible for turning raw template source into a set of Mustache tokens.
  */
-class Mustache_Tokenizer
+class Tokenizer
 {
     // Finite state machine states
     const IN_TEXT     = 0;
@@ -84,7 +85,7 @@ class Mustache_Tokenizer
     /**
      * Scan and tokenize template source.
      *
-     * @throws Mustache_Exception_SyntaxException when mismatched section tags are encountered.
+     * @throws \Mustache\Exception\SyntaxException when mismatched section tags are encountered.
      *
      * @param string $text       Mustache template source to tokenize
      * @param string $delimiters Optionally, pass initial opening and closing delimiters (default: null)
@@ -174,7 +175,7 @@ class Mustache_Tokenizer
                                         $token[self::LINE]
                                     );
 
-                                    throw new Mustache_Exception_SyntaxException($msg, $token);
+                                    throw new \Mustache\Exception\SyntaxException($msg, $token);
                                 }
                             } else {
                                 $lastName = $token[self::NAME];
@@ -187,7 +188,7 @@ class Mustache_Tokenizer
                                         $token[self::LINE]
                                     );
 
-                                    throw new Mustache_Exception_SyntaxException($msg, $token);
+                                    throw new \Mustache\Exception\SyntaxException($msg, $token);
                                 }
                             }
                         }
