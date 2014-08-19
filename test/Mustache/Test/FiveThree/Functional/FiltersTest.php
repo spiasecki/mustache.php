@@ -20,7 +20,7 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mustache = new \Mustache\Engine;
+        $this->mustache = new \Mustache\Engine();
     }
 
     /**
@@ -72,7 +72,7 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
             return sprintf('[[%s]]', $value);
         });
 
-        $foo = new \StdClass;
+        $foo = new \StdClass();
         $foo->date = new \DateTime('1/1/2000', new \DateTimeZone("UTC"));
 
         $this->assertEquals('[[2000-01-01 12:01:00]]', $tpl->render($foo));

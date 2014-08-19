@@ -18,8 +18,8 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
     public function testConstructor()
     {
         $logger         = new \Mustache\Logger\StreamLogger(tmpfile());
-        $loader         = new \Mustache\Loader\StringLoader;
-        $partialsLoader = new \Mustache\Loader\ArrayLoader;
+        $loader         = new \Mustache\Loader\StringLoader();
+        $partialsLoader = new \Mustache\Loader\ArrayLoader();
         $mustache       = new \Mustache\Engine(array(
             'template_class_prefix' => '__whot__',
             'cache'  => self::$tempDir,
@@ -37,6 +37,7 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
             'escape'  => 'strtoupper',
             'entity_flags' => ENT_QUOTES,
             'charset' => 'ISO-8859-1',
+            'pragmas' => array(\Mustache\Engine::PRAGMA_FILTERS),
         ));
 
         $this->assertSame($logger, $mustache->getLogger());
@@ -51,6 +52,7 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
         $this->assertTrue($mustache->hasHelper('bar'));
         $this->assertFalse($mustache->hasHelper('baz'));
         $this->assertInstanceOf('\Mustache\Cache\FilesystemCache', $mustache->getCache());
+        $this->assertEquals(array(\Mustache\Engine::PRAGMA_FILTERS), $mustache->getPragmas());
     }
 
     public static function getFoo()
@@ -68,7 +70,7 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mustache = new MustacheStub;
+        $mustache = new MustacheStub();
         $mustache->template = $template;
 
         $template->expects($this->once())
@@ -83,11 +85,11 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
     public function testSettingServices()
     {
         $logger    = new \Mustache\Logger\StreamLogger(tmpfile());
-        $loader    = new \Mustache\Loader\StringLoader;
-        $tokenizer = new \Mustache\Tokenizer;
-        $parser    = new \Mustache\Parser;
-        $compiler  = new \Mustache\Compiler;
-        $mustache  = new \Mustache\Engine;
+        $loader    = new \Mustache\Loader\StringLoader();
+        $tokenizer = new \Mustache\Tokenizer();
+        $parser    = new \Mustache\Parser();
+        $compiler  = new \Mustache\Compiler();
+        $mustache  = new \Mustache\Engine();
         $cache     = new \Mustache\Cache\FilesystemCache(self::$tempDir);
 
         $this->assertNotSame($logger, $mustache->getLogger());
@@ -180,7 +182,7 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
     public function testImmutablePartialsLoadersThrowException()
     {
         $mustache = new \Mustache\Engine(array(
-            'partials_loader' => new \Mustache\Loader\StringLoader,
+            'partials_loader' => new \Mustache\Loader\StringLoader(),
         ));
 
         $mustache->setPartials(array('foo' => '{{ foo }}'));
@@ -244,7 +246,7 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
      */
     public function testSetHelpersThrowsExceptions()
     {
-        $mustache = new \Mustache\Engine;
+        $mustache = new \Mustache\Engine();
         $mustache->setHelpers('monkeymonkeymonkey');
     }
 
@@ -253,8 +255,8 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
      */
     public function testSetLoggerThrowsExceptions()
     {
-        $mustache = new \Mustache\Engine;
-        $mustache->setLogger(new \StdClass);
+        $mustache = new \Mustache\Engine();
+        $mustache->setLogger(new \StdClass());
     }
 
     public function testLoadPartialCascading()

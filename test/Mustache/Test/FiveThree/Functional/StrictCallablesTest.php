@@ -24,7 +24,7 @@ class StrictCallablesTest extends \PHPUnit_Framework_TestCase
         $mustache = new \Mustache\Engine(array('strict_callables' => $strict));
         $tpl      = $mustache->loadTemplate('{{# section }}{{ name }}{{/ section }}');
 
-        $data = new \StdClass;
+        $data = new \StdClass();
         $data->name    = $name;
         $data->section = $section;
 

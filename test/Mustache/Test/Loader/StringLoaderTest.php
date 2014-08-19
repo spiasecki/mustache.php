@@ -17,7 +17,7 @@ class StringLoaderTest extends \PHPUnit_Framework_TestCase
 {
     public function testLoadTemplates()
     {
-        $loader = new \Mustache\Loader\StringLoader;
+        $loader = new \Mustache\Loader\StringLoader();
 
         $this->assertEquals('foo', $loader->load('foo'));
         $this->assertEquals('{{ bar }}', $loader->load('{{ bar }}'));

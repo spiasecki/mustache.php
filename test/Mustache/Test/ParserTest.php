@@ -21,7 +21,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testParse($tokens, $expected)
     {
-        $parser = new \Mustache\Parser;
+        $parser = new \Mustache\Parser();
         $this->assertEquals($expected, $parser->parse($tokens));
     }
 
@@ -89,6 +89,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
                         \Mustache\Tokenizer::VALUE => 'bar'
                     ),
                 ),
+
                 array(
                     array(
                         \Mustache\Tokenizer::TYPE  => \Mustache\Tokenizer::T_TEXT,
@@ -117,6 +118,166 @@ class ParserTest extends \PHPUnit_Framework_TestCase
                 ),
             ),
 
+            // This *would* be an invalid inheritance parse tree, but that pragma
+            // isn't enabled so it'll thunk it back into an "escaped" token:
+            array(
+                array(
+                    array(
+                       \Mustache\Tokenizer::TYPE =>\Mustache\Tokenizer::T_BLOCK_VAR,
+                       \Mustache\Tokenizer::NAME => 'foo',
+                       \Mustache\Tokenizer::OTAG => '{{',
+                       \Mustache\Tokenizer::CTAG => '}}',
+                       \Mustache\Tokenizer::LINE => 0,
+                    ),
+                    array(
+                       \Mustache\Tokenizer::TYPE =>\Mustache\Tokenizer::T_TEXT,
+                       \Mustache\Tokenizer::LINE => 0,
+                       \Mustache\Tokenizer::VALUE => 'bar'
+                    ),
+                ),
+                array(
+                    array(
+                       \Mustache\Tokenizer::TYPE =>\Mustache\Tokenizer::T_ESCAPED,
+                       \Mustache\Tokenizer::NAME => '$foo',
+                       \Mustache\Tokenizer::OTAG => '{{',
+                       \Mustache\Tokenizer::CTAG => '}}',
+                       \Mustache\Tokenizer::LINE => 0,
+                    ),
+                    array(
+                       \Mustache\Tokenizer::TYPE =>\Mustache\Tokenizer::T_TEXT,
+                       \Mustache\Tokenizer::LINE => 0,
+                       \Mustache\Tokenizer::VALUE => 'bar'
+                    ),
+                ),
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider getInheritanceTokenSets
+     */
+    public function testParseWithInheritance($tokens, $expected)
+    {
+        $parser = new \Mustache\Parser();
+        $parser->setPragmas(array(\Mustache\Engine::PRAGMA_BLOCKS));
+        $this->assertEquals($expected, $parser->parse($tokens));
+    }
+
+    public function getInheritanceTokenSets()
+    {
+        return array(
+            array(
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_PARENT,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 8
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_BLOCK_VAR,
+                        \Mustache\Tokenizer::NAME => 'bar',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 16
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::VALUE => 'baz'
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_END_SECTION,
+                        \Mustache\Tokenizer::NAME => 'bar',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 19
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_END_SECTION,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 27
+                    )
+                ),
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_PARENT,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 8,
+                        \Mustache\Tokenizer::END => 27,
+                        \Mustache\Tokenizer::NODES => array(
+                            array(
+                                \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_BLOCK_ARG,
+                                \Mustache\Tokenizer::NAME => 'bar',
+                                \Mustache\Tokenizer::OTAG => '{{',
+                                \Mustache\Tokenizer::CTAG => '}}',
+                                \Mustache\Tokenizer::LINE => 0,
+                                \Mustache\Tokenizer::INDEX => 16,
+                                \Mustache\Tokenizer::END => 19,
+                                \Mustache\Tokenizer::NODES => array(
+                                    array(
+                                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                                        \Mustache\Tokenizer::LINE => 0,
+                                        \Mustache\Tokenizer::VALUE => 'baz'
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+
+            array(
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_BLOCK_VAR,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::VALUE => 'bar'
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_END_SECTION,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 11,
+                    ),
+                ),
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_BLOCK_VAR,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::END => 11,
+                        \Mustache\Tokenizer::NODES => array(
+                            array(
+                                \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                                \Mustache\Tokenizer::LINE => 0,
+                                \Mustache\Tokenizer::VALUE => 'bar'
+                            )
+                        )
+                    )
+                )
+            ),
         );
     }
 
@@ -126,7 +287,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
      */
     public function testParserThrowsExceptions($tokens)
     {
-        $parser = new \Mustache\Parser;
+        $parser = new \Mustache\Parser();
         $parser->parse($tokens);
     }
 
@@ -195,6 +356,33 @@ class ParserTest extends \PHPUnit_Framework_TestCase
                         \Mustache\Tokenizer::NAME  => 'child',
                         \Mustache\Tokenizer::LINE  => 0,
                         \Mustache\Tokenizer::INDEX => 123,
+                    ),
+                ),
+            ),
+
+            // This *would* be a valid inheritance parse tree, but that pragma
+            // isn't enabled here so it's going to fail :)
+            array(
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_BLOCK_VAR,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::VALUE => 'bar'
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_END_SECTION,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '{{',
+                        \Mustache\Tokenizer::CTAG => '}}',
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::INDEX => 11,
                     ),
                 ),
             ),

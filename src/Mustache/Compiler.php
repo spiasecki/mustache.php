@@ -17,6 +17,9 @@ namespace Mustache;
  */
 class Compiler
 {
+
+    private $pragmas;
+    private $defaultPragmas = array();
     private $sections;
     private $source;
     private $indentNextLine;
@@ -24,7 +27,6 @@ class Compiler
     private $entityFlags;
     private $charset;
     private $strictCallables;
-    private $pragmas;
 
     /**
      * Compile a Mustache token parse tree into PHP source code.
@@ -41,7 +43,7 @@ class Compiler
      */
     public function compile($source, array $tree, $name, $customEscape = false, $charset = 'UTF-8', $strictCallables = false, $entityFlags = ENT_COMPAT)
     {
-        $this->pragmas         = array();
+        $this->pragmas         = $this->defaultPragmas;
         $this->sections        = array();
         $this->source          = $source;
         $this->indentNextLine  = true;
@@ -51,6 +53,23 @@ class Compiler
         $this->strictCallables = $strictCallables;
 
         return $this->writeCode($tree, $name);
+    }
+
+    /**
+     * Enable pragmas across all templates, regardless of the presence of pragma
+     * tags in the individual templates.
+     *
+     * @internal Users should set global pragmas in \Mustache\Engine, not here :)
+     *
+     * @param string[] $pragmas
+     */
+    public function setPragmas(array $pragmas)
+    {
+        $this->pragmas = array();
+        foreach ($pragmas as $pragma) {
+            $this->pragmas[$pragma] = true;
+        }
+        $this->defaultPragmas = $this->pragmas;
     }
 
     /**
@@ -77,6 +96,7 @@ class Compiler
                     $code .= $this->section(
                         $node[\Mustache\Tokenizer::NODES],
                         $node[\Mustache\Tokenizer::NAME],
+                        isset($node[\Mustache\Tokenizer::FILTERS]) ? $node[\Mustache\Tokenizer::FILTERS] : array(),
                         $node[\Mustache\Tokenizer::INDEX],
                         $node[\Mustache\Tokenizer::END],
                         $node[\Mustache\Tokenizer::OTAG],
@@ -89,12 +109,12 @@ class Compiler
                     $code .= $this->invertedSection(
                         $node[\Mustache\Tokenizer::NODES],
                         $node[\Mustache\Tokenizer::NAME],
+                        isset($node[\Mustache\Tokenizer::FILTERS]) ? $node[\Mustache\Tokenizer::FILTERS] : array(),
                         $level
                     );
                     break;
 
                 case \Mustache\Tokenizer::T_PARTIAL:
-                case \Mustache\Tokenizer::T_PARTIAL_2:
                     $code .= $this->partial(
                         $node[\Mustache\Tokenizer::NAME],
                         isset($node[\Mustache\Tokenizer::INDENT]) ? $node[\Mustache\Tokenizer::INDENT] : '',
@@ -102,16 +122,51 @@ class Compiler
                     );
                     break;
 
-                case \Mustache\Tokenizer::T_UNESCAPED:
-                case \Mustache\Tokenizer::T_UNESCAPED_2:
-                    $code .= $this->variable($node[\Mustache\Tokenizer::NAME], false, $level);
+                case \Mustache\Tokenizer::T_PARENT:
+                    $code .= $this->parent(
+                        $node[\Mustache\Tokenizer::NAME],
+                        isset($node[\Mustache\Tokenizer::INDENT]) ? $node[\Mustache\Tokenizer::INDENT] : '',
+                        $node[\Mustache\Tokenizer::NODES],
+                        $level
+                    );
+                    break;
+
+                case \Mustache\Tokenizer::T_BLOCK_ARG:
+                    $code .= $this->blockArg(
+                        $node[\Mustache\Tokenizer::NODES],
+                        $node[\Mustache\Tokenizer::NAME],
+                        $node[\Mustache\Tokenizer::INDEX],
+                        $node[\Mustache\Tokenizer::END],
+                        $node[\Mustache\Tokenizer::OTAG],
+                        $node[\Mustache\Tokenizer::CTAG],
+                        $level
+                    );
+                    break;
+
+                case \Mustache\Tokenizer::T_BLOCK_VAR:
+                    $code .= $this->blockVar(
+                        $node[\Mustache\Tokenizer::NODES],
+                        $node[\Mustache\Tokenizer::NAME],
+                        $node[\Mustache\Tokenizer::INDEX],
+                        $node[\Mustache\Tokenizer::END],
+                        $node[\Mustache\Tokenizer::OTAG],
+                        $node[\Mustache\Tokenizer::CTAG],
+                        $level
+                    );
                     break;
 
                 case \Mustache\Tokenizer::T_COMMENT:
                     break;
 
                 case \Mustache\Tokenizer::T_ESCAPED:
-                    $code .= $this->variable($node[\Mustache\Tokenizer::NAME], true, $level);
+                case \Mustache\Tokenizer::T_UNESCAPED:
+                case \Mustache\Tokenizer::T_UNESCAPED_2:
+                    $code .= $this->variable(
+                        $node[\Mustache\Tokenizer::NAME],
+                        isset($node[\Mustache\Tokenizer::FILTERS]) ? $node[\Mustache\Tokenizer::FILTERS] : array(),
+                        $node[\Mustache\Tokenizer::TYPE] === \Mustache\Tokenizer::T_ESCAPED,
+                        $level
+                    );
                     break;
 
                 case \Mustache\Tokenizer::T_TEXT:
@@ -136,6 +191,7 @@ class Compiler
             {
                 $this->lambdaHelper = new \Mustache\LambdaHelper($this->mustache, $context);
                 $buffer = \'\';
+                $newContext = array();
         %s
 
                 return $buffer;
@@ -150,6 +206,7 @@ class Compiler
             public function renderInternal(\Mustache\Context $context, $indent = \'\')
             {
                 $buffer = \'\';
+                $newContext = array();
         %s
 
                 return $buffer;
@@ -171,9 +228,66 @@ class Compiler
         $code     = $this->walk($tree);
         $sections = implode("\n", $this->sections);
         $klass    = empty($this->sections) ? self::KLASS_NO_LAMBDAS : self::KLASS;
+
         $callable = $this->strictCallables ? $this->prepare(self::STRICT_CALLABLE) : '';
 
         return sprintf($this->prepare($klass, 0, false, true), $name, $callable, $code, $sections);
+    }
+
+    const BLOCK_VAR = '
+        $value = $this->resolveValue($context->findInBlock(%s), $context, $indent);
+        if ($value && !is_array($value) && !is_object($value)) {
+            $buffer .= $value;
+        } else {
+            %s
+        }
+    ';
+
+    /**
+     * Generate Mustache Template inheritance block variable PHP source.
+     *
+     * @param array  $nodes Array of child tokens
+     * @param string $id    Section name
+     * @param int    $start Section start offset
+     * @param int    $end   Section end offset
+     * @param string $otag  Current Mustache opening tag
+     * @param string $ctag  Current Mustache closing tag
+     * @param int    $level
+     *
+     * @return string Generated PHP source code
+     */
+    private function blockVar($nodes, $id, $start, $end, $otag, $ctag, $level)
+    {
+        $id = var_export($id, true);
+
+        return sprintf($this->prepare(self::BLOCK_VAR, $level), $id, $this->walk($nodes, 2));
+    }
+
+    const BLOCK_ARG = '
+        // %s block_arg
+        $value = $this->section%s($context, $indent, true);
+        $newContext[%s] = %s$value;
+    ';
+
+    /**
+     * Generate Mustache Template inheritance block argument PHP source.
+     *
+     * @param array  $nodes Array of child tokens
+     * @param string $id    Section name
+     * @param int    $start Section start offset
+     * @param int    $end   Section end offset
+     * @param string $otag  Current Mustache opening tag
+     * @param string $ctag  Current Mustache closing tag
+     * @param int    $level
+     *
+     * @return string Generated PHP source code
+     */
+    private function blockArg($nodes, $id, $start, $end, $otag, $ctag, $level)
+    {
+        $key = $this->section($nodes, $id, array(), $start, $end, $otag, $ctag, $level, true);
+        $id  = var_export($id, true);
+
+        return sprintf($this->prepare(self::BLOCK_ARG, $level), $id, $key, $id, $this->flushIndent());
     }
 
     const SECTION_CALL = '
@@ -199,7 +313,8 @@ class Compiler
             } elseif (!empty($value)) {
                 $values = $this->isIterable($value) ? $value : array($value);
                 foreach ($values as $value) {
-                    $context->push($value);%s
+                    $context->push($value);
+                    %s
                     $context->pop();
                 }
             }
@@ -210,26 +325,20 @@ class Compiler
     /**
      * Generate Mustache Template section PHP source.
      *
-     * @param array  $nodes Array of child tokens
-     * @param string $id    Section name
-     * @param int    $start Section start offset
-     * @param int    $end   Section end offset
-     * @param string $otag  Current Mustache opening tag
-     * @param string $ctag  Current Mustache closing tag
-     * @param int    $level
+     * @param array    $nodes   Array of child tokens
+     * @param string   $id      Section name
+     * @param string[] $filters Array of filters
+     * @param int      $start   Section start offset
+     * @param int      $end     Section end offset
+     * @param string   $otag    Current Mustache opening tag
+     * @param string   $ctag    Current Mustache closing tag
+     * @param int      $level
+     * @param bool     $arg     (default: false)
      *
      * @return string Generated section PHP source code
      */
-    private function section($nodes, $id, $start, $end, $otag, $ctag, $level)
+    private function section($nodes, $id, $filters, $start, $end, $otag, $ctag, $level, $arg = false)
     {
-        $filters = '';
-
-        if (isset($this->pragmas[\Mustache\Engine::PRAGMA_FILTERS])) {
-            list($id, $filters) = $this->getFilters($id, $level);
-        }
-
-        $method   = $this->getFindMethod($id);
-        $id       = var_export($id, true);
         $source   = var_export(substr($this->source, $start, $end - $start), true);
         $callable = $this->getCallable();
 
@@ -239,13 +348,21 @@ class Compiler
             $delims = '';
         }
 
-        $key    = ucfirst(md5($delims."\n".$source));
+        $key = ucfirst(md5($delims."\n".$source));
 
         if (!isset($this->sections[$key])) {
             $this->sections[$key] = sprintf($this->prepare(self::SECTION), $key, $callable, $source, $delims, $this->walk($nodes, 2));
         }
 
-        return sprintf($this->prepare(self::SECTION_CALL, $level), $id, $method, $id, $filters, $key);
+        if ($arg === true) {
+            return $key;
+        } else {
+            $method  = $this->getFindMethod($id);
+            $id      = var_export($id, true);
+            $filters = $this->getFilters($filters, $level);
+
+            return sprintf($this->prepare(self::SECTION_CALL, $level), $id, $method, $id, $filters, $key);
+        }
     }
 
     const INVERTED_SECTION = '
@@ -258,29 +375,26 @@ class Compiler
     /**
      * Generate Mustache Template inverted section PHP source.
      *
-     * @param array  $nodes Array of child tokens
-     * @param string $id    Section name
-     * @param int    $level
+     * @param array    $nodes   Array of child tokens
+     * @param string   $id      Section name
+     * @param string[] $filters Array of filters
+     * @param int      $level
      *
      * @return string Generated inverted section PHP source code
      */
-    private function invertedSection($nodes, $id, $level)
+    private function invertedSection($nodes, $id, $filters, $level)
     {
-        $filters = '';
-
-        if (isset($this->pragmas[\Mustache\Engine::PRAGMA_FILTERS])) {
-            list($id, $filters) = $this->getFilters($id, $level);
-        }
-
-        $method = $this->getFindMethod($id);
-        $id     = var_export($id, true);
+        $method  = $this->getFindMethod($id);
+        $id      = var_export($id, true);
+        $filters = $this->getFilters($filters, $level);
 
         return sprintf($this->prepare(self::INVERTED_SECTION, $level), $id, $method, $id, $filters, $this->walk($nodes, $level));
     }
 
+    const PARTIAL_INDENT = ', $indent . %s';
     const PARTIAL = '
         if ($partial = $this->mustache->loadPartial(%s)) {
-            $buffer .= $partial->renderInternal($context, $indent . %s);
+            $buffer .= $partial->renderInternal($context%s);
         }
     ';
 
@@ -295,11 +409,61 @@ class Compiler
      */
     private function partial($id, $indent, $level)
     {
+        if ($indent !== '') {
+            $indentParam = sprintf(self::PARTIAL_INDENT, var_export($indent, true));
+        } else {
+            $indentParam = '';
+        }
+
         return sprintf(
             $this->prepare(self::PARTIAL, $level),
             var_export($id, true),
+            $indentParam
+        );
+    }
+
+    const PARENT = '
+        %s
+
+        if ($parent = $this->mustache->LoadPartial(%s)) {
+            $context->pushBlockContext($newContext);
+            $buffer .= $parent->renderInternal($context, $indent);
+            $context->popBlockContext();
+        }
+    ';
+
+    /**
+     * Generate Mustache Template inheritance parent call PHP source.
+     *
+     * @param string $id       Parent tag name
+     * @param string $indent   Whitespace indent to apply to parent
+     * @param array  $children Child nodes
+     * @param int    $level
+     *
+     * @return string Generated PHP source code
+     */
+    private function parent($id, $indent, array $children, $level)
+    {
+        $realChildren = array_filter($children, array(__CLASS__, 'onlyBlockArgs'));
+
+        return sprintf(
+            $this->prepare(self::PARENT, $level),
+            $this->walk($realChildren, $level),
+            var_export($id, true),
             var_export($indent, true)
         );
+    }
+
+    /**
+     * Helper method for filtering out non-block-arg tokens.
+     *
+     * @param array $node
+     *
+     * @return boolean True if $node is a block arg token.
+     */
+    private static function onlyBlockArgs(array $node)
+    {
+        return $node[\Mustache\Tokenizer::TYPE] === \Mustache\Tokenizer::T_BLOCK_ARG;
     }
 
     const VARIABLE = '
@@ -310,41 +474,21 @@ class Compiler
     /**
      * Generate Mustache Template variable interpolation PHP source.
      *
-     * @param string  $id     Variable name
-     * @param boolean $escape Escape the variable value for output?
-     * @param int     $level
+     * @param string   $id      Variable name
+     * @param string[] $filters Array of filters
+     * @param boolean  $escape  Escape the variable value for output?
+     * @param int      $level
      *
      * @return string Generated variable interpolation PHP source
      */
-    private function variable($id, $escape, $level)
+    private function variable($id, $filters, $escape, $level)
     {
-        $filters = '';
-
-        if (isset($this->pragmas[\Mustache\Engine::PRAGMA_FILTERS])) {
-            list($id, $filters) = $this->getFilters($id, $level);
-        }
-
-        $method = $this->getFindMethod($id);
-        $id     = ($method !== 'last') ? var_export($id, true) : '';
-        $value  = $escape ? $this->getEscape() : '$value';
+        $method  = $this->getFindMethod($id);
+        $id      = ($method !== 'last') ? var_export($id, true) : '';
+        $filters = $this->getFilters($filters, $level);
+        $value   = $escape ? $this->getEscape() : '$value';
 
         return sprintf($this->prepare(self::VARIABLE, $level), $method, $id, $filters, $this->flushIndent(), $value);
-    }
-
-    /**
-     * Generate Mustache Template variable filtering PHP source.
-     *
-     * @param string $id    Variable name
-     * @param int    $level
-     *
-     * @return string Generated variable filtering PHP source
-     */
-    private function getFilters($id, $level)
-    {
-        $filters = array_map('trim', explode('|', $id));
-        $id      = array_shift($filters);
-
-        return array($id, $this->getFilter($filters, $level));
     }
 
     const FILTER = '
@@ -356,14 +500,14 @@ class Compiler
     ';
 
     /**
-     * Generate PHP source for a single filter.
+     * Generate Mustache Template variable filtering PHP source.
      *
-     * @param array $filters
-     * @param int   $level
+     * @param string[] $filters Array of filters
+     * @param int      $level
      *
      * @return string Generated filter PHP source
      */
-    private function getFilter(array $filters, $level)
+    private function getFilters(array $filters, $level)
     {
         if (empty($filters)) {
             return '';
@@ -375,7 +519,7 @@ class Compiler
         $callable = $this->getCallable('$filter');
         $msg      = var_export($name, true);
 
-        return sprintf($this->prepare(self::FILTER, $level), $method, $filter, $callable, $msg, $this->getFilter($filters, $level));
+        return sprintf($this->prepare(self::FILTER, $level), $method, $filter, $callable, $msg, $this->getFilters($filters, $level));
     }
 
     const LINE = '$buffer .= "\n";';
@@ -435,9 +579,9 @@ class Compiler
     {
         if ($this->customEscape) {
             return sprintf(self::CUSTOM_ESCAPE, $value);
-        } else {
-            return sprintf(self::DEFAULT_ESCAPE, $value, var_export($this->entityFlags, true), var_export($this->charset, true));
         }
+
+        return sprintf(self::DEFAULT_ESCAPE, $value, var_export($this->entityFlags, true), var_export($this->charset, true));
     }
 
     /**
@@ -457,16 +601,25 @@ class Compiler
     {
         if ($id === '.') {
             return 'last';
-        } elseif (strpos($id, '.') === false) {
-            return 'find';
-        } else {
-            return 'findDot';
         }
+
+        if (strpos($id, '.') === false) {
+            return 'find';
+        }
+
+        return 'findDot';
     }
 
     const IS_CALLABLE        = '!is_string(%s) && is_callable(%s)';
     const STRICT_IS_CALLABLE = 'is_object(%s) && is_callable(%s)';
 
+    /**
+     * Helper function to compile strict vs lax "is callable" logic.
+     *
+     * @param string $variable (default: '$value')
+     *
+     * @return string "is callable" logic
+     */
     private function getCallable($variable = '$value')
     {
         $tpl = $this->strictCallables ? self::STRICT_IS_CALLABLE : self::IS_CALLABLE;

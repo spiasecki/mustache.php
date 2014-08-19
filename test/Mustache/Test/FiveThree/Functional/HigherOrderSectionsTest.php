@@ -20,14 +20,14 @@ class HigherOrderSectionsTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mustache = new \Mustache\Engine;
+        $this->mustache = new \Mustache\Engine();
     }
 
     public function testAnonymousFunctionSectionCallback()
     {
         $tpl = $this->mustache->loadTemplate('{{#wrapper}}{{name}}{{/wrapper}}');
 
-        $foo = new \Mustache\Test\FiveThree\Functional\Foo;
+        $foo = new \Mustache\Test\FiveThree\Functional\Foo();
         $foo->name = 'Mario';
         $foo->wrapper = function ($text) {
             return sprintf('<div class="anonymous">%s</div>', $text);
@@ -41,7 +41,7 @@ class HigherOrderSectionsTest extends \PHPUnit_Framework_TestCase
         $one = $this->mustache->loadTemplate('{{name}}');
         $two = $this->mustache->loadTemplate('{{#wrap}}{{name}}{{/wrap}}');
 
-        $foo = new \Mustache\Test\FiveThree\Functional\Foo;
+        $foo = new \Mustache\Test\FiveThree\Functional\Foo();
         $foo->name = 'Luigi';
 
         $this->assertEquals($foo->name, $one->render($foo));

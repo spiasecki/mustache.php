@@ -36,7 +36,7 @@ class HelperCollectionTest extends \PHPUnit_Framework_TestCase
         $foo = array($this, 'getFoo');
         $bar = 'BAR';
 
-        $helpers = new \Mustache\HelperCollection;
+        $helpers = new \Mustache\HelperCollection();
         $this->assertTrue($helpers->isEmpty());
         $this->assertFalse($helpers->has('foo'));
         $this->assertFalse($helpers->has('bar'));
@@ -62,7 +62,7 @@ class HelperCollectionTest extends \PHPUnit_Framework_TestCase
         $foo = array($this, 'getFoo');
         $bar = 'BAR';
 
-        $helpers = new \Mustache\HelperCollection;
+        $helpers = new \Mustache\HelperCollection();
         $this->assertTrue($helpers->isEmpty());
         $this->assertFalse($helpers->has('foo'));
         $this->assertFalse($helpers->has('bar'));

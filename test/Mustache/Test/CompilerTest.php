@@ -21,7 +21,7 @@ class CompilerTest extends \PHPUnit_Framework_TestCase
      */
     public function testCompile($source, array $tree, $name, $customEscaper, $entityFlags, $charset, $expected)
     {
-        $compiler = new \Mustache\Compiler;
+        $compiler = new \Mustache\Compiler();
 
         $compiled = $compiler->compile($source, $tree, $name, $customEscaper, $charset, false, $entityFlags);
         foreach ($expected as $contains) {
@@ -139,7 +139,7 @@ class CompilerTest extends \PHPUnit_Framework_TestCase
      */
     public function testCompilerThrowsSyntaxException()
     {
-        $compiler = new \Mustache\Compiler;
+        $compiler = new \Mustache\Compiler();
         $compiler->compile('', array(array(\Mustache\Tokenizer::TYPE => 'invalid')), 'SomeClass');
     }
 

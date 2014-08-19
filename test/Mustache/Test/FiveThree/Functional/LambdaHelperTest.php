@@ -20,7 +20,7 @@ class LambdaHelperTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mustache = new \Mustache\Engine;
+        $this->mustache = new \Mustache\Engine();
     }
 
     public function testSectionLambdaHelper()
@@ -28,7 +28,7 @@ class LambdaHelperTest extends \PHPUnit_Framework_TestCase
         $one = $this->mustache->loadTemplate('{{name}}');
         $two = $this->mustache->loadTemplate('{{#lambda}}{{name}}{{/lambda}}');
 
-        $foo = new \StdClass;
+        $foo = new \StdClass();
         $foo->name = 'Mario';
         $foo->lambda = function ($text, $mustache) {
             return strtoupper($mustache->render($text));

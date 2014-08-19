@@ -19,7 +19,7 @@ class CallTest extends \PHPUnit_Framework_TestCase
 
     public function testCallEatsContext()
     {
-        $m = new \Mustache\Engine;
+        $m = new \Mustache\Engine();
         $tpl = $m->loadTemplate('{{# foo }}{{ label }}: {{ name }}{{/ foo }}');
 
         $foo = new \Mustache\Test\Functional\ClassWithCall();

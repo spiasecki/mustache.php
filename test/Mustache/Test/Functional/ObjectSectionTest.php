@@ -20,13 +20,13 @@ class ObjectSectionTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mustache = new \Mustache\Engine;
+        $this->mustache = new \Mustache\Engine();
     }
 
     public function testBasicObject()
     {
         $tpl = $this->mustache->loadTemplate('{{#foo}}{{name}}{{/foo}}');
-        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Alpha));
+        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Alpha()));
     }
 
     /**
@@ -35,7 +35,7 @@ class ObjectSectionTest extends \PHPUnit_Framework_TestCase
     public function testObjectWithGet()
     {
         $tpl = $this->mustache->loadTemplate('{{#foo}}{{name}}{{/foo}}');
-        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Beta));
+        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Beta()));
     }
 
     /**
@@ -44,14 +44,14 @@ class ObjectSectionTest extends \PHPUnit_Framework_TestCase
     public function testSectionObjectWithGet()
     {
         $tpl = $this->mustache->loadTemplate('{{#bar}}{{#foo}}{{name}}{{/foo}}{{/bar}}');
-        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Gamma));
+        $this->assertEquals('Foo', $tpl->render(new \Mustache\Test\Functional\Gamma()));
     }
 
     public function testSectionObjectWithFunction()
     {
         $tpl = $this->mustache->loadTemplate('{{#foo}}{{name}}{{/foo}}');
-        $alpha = new \Mustache\Test\Functional\Alpha;
-        $alpha->foo = new \Mustache\Test\Functional\Delta;
+        $alpha = new \Mustache\Test\Functional\Alpha();
+        $alpha->foo = new \Mustache\Test\Functional\Delta();
         $this->assertEquals('Foo', $tpl->render($alpha));
     }
 }
@@ -96,7 +96,7 @@ class Gamma
 
     public function __construct()
     {
-        $this->bar = new \Mustache\Test\Functional\Beta;
+        $this->bar = new \Mustache\Test\Functional\Beta();
     }
 }
 

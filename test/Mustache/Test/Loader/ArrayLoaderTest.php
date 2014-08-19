@@ -47,7 +47,7 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
      */
     public function testMissingTemplatesThrowExceptions()
     {
-        $loader = new \Mustache\Loader\ArrayLoader;
+        $loader = new \Mustache\Loader\ArrayLoader();
         $loader->load('not_a_real_template');
     }
 }

@@ -21,7 +21,7 @@ class MustacheInjectionTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mustache = new \Mustache\Engine;
+        $this->mustache = new \Mustache\Engine();
     }
 
     /**

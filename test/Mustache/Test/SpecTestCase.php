@@ -16,7 +16,7 @@ abstract class SpecTestCase extends \PHPUnit_Framework_TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$mustache = new \Mustache\Engine;
+        self::$mustache = new \Mustache\Engine();
     }
 
     protected static function loadTemplate($source, $partials)
@@ -43,7 +43,7 @@ abstract class SpecTestCase extends \PHPUnit_Framework_TestCase
         }
 
         $data = array();
-        $yaml = new \sfYamlParser;
+        $yaml = new \sfYamlParser();
         $file = file_get_contents($filename);
 
         // @hack: pre-process the 'lambdas' spec so the Symfony YAML parser doesn't complain.

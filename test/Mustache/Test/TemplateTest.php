@@ -17,7 +17,7 @@ class TemplateTest extends \PHPUnit_Framework_TestCase
 {
     public function testConstructor()
     {
-        $mustache = new \Mustache\Engine;
+        $mustache = new \Mustache\Engine();
         $template = new \Mustache\Test\TemplateStub($mustache);
         $this->assertSame($mustache, $template->getMustache());
     }
@@ -25,10 +25,10 @@ class TemplateTest extends \PHPUnit_Framework_TestCase
     public function testRendering()
     {
         $rendered = '<< wheee >>';
-        $mustache = new \Mustache\Engine;
+        $mustache = new \Mustache\Engine();
         $template = new \Mustache\Test\TemplateStub($mustache);
         $template->rendered = $rendered;
-        $context  = new \Mustache\Context;
+        $context  = new \Mustache\Context();
 
         if (version_compare(PHP_VERSION, '5.3.0', '>=')) {
             $this->assertEquals($rendered, $template());

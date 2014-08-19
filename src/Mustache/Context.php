@@ -15,7 +15,8 @@ namespace Mustache;
  */
 class Context
 {
-    private $stack = array();
+    private $stack      = array();
+    private $blockStack = array();
 
     /**
      * Mustache rendering Context constructor.
@@ -40,6 +41,16 @@ class Context
     }
 
     /**
+     * Push a new Context frame onto the block context stack.
+     *
+     * @param mixed $value Object or array to use for block context
+     */
+    public function pushBlockContext($value)
+    {
+        array_push($this->blockStack, $value);
+    }
+
+    /**
      * Pop the last Context frame from the stack.
      *
      * @return mixed Last Context frame (object or array)
@@ -47,6 +58,16 @@ class Context
     public function pop()
     {
         return array_pop($this->stack);
+    }
+
+    /**
+     * Pop the last block Context frame from the stack.
+     *
+     * @return mixed Last block Context frame (object or array)
+     */
+    public function popBlockContext()
+    {
+        return array_pop($this->blockStack);
     }
 
     /**
@@ -122,6 +143,24 @@ class Context
     }
 
     /**
+     * Find an argument in the block context stack.
+     *
+     * @param string $id
+     *
+     * @return mixed Variable value, or '' if not found.
+     */
+    public function findInBlock($id)
+    {
+        foreach ($this->blockStack as $context) {
+            if (array_key_exists($id, $context)) {
+                return $context[$id];
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Helper function to find a variable in the Context stack.
      *
      * @see \Mustache\Context::find
@@ -134,19 +173,32 @@ class Context
     private function findVariableInStack($id, array $stack)
     {
         for ($i = count($stack) - 1; $i >= 0; $i--) {
-            if (is_object($stack[$i]) && !($stack[$i] instanceof \Closure)) {
+            $frame = &$stack[$i];
 
-                // Note that is_callable() *will not work here*
-                // See https://github.com/bobthecow/mustache.php/wiki/Magic-Methods
-                if (method_exists($stack[$i], $id)) {
-                    return $stack[$i]->$id();
-                } elseif (isset($stack[$i]->$id)) {
-                    return $stack[$i]->$id;
-                } elseif ($stack[$i] instanceof \ArrayAccess && isset($stack[$i][$id])) {
-                    return $stack[$i][$id];
-                }
-            } elseif (is_array($stack[$i]) && array_key_exists($id, $stack[$i])) {
-                return $stack[$i][$id];
+            switch (gettype($frame)) {
+                case 'object':
+                    if (!($frame instanceof \Closure)) {
+                        // Note that is_callable() *will not work here*
+                        // See https://github.com/bobthecow/mustache.php/wiki/Magic-Methods
+                        if (method_exists($frame, $id)) {
+                            return $frame->$id();
+                        }
+
+                        if (isset($frame->$id)) {
+                            return $frame->$id;
+                        }
+
+                        if ($frame instanceof \ArrayAccess && isset($frame[$id])) {
+                            return $frame[$id];
+                        }
+                    }
+                    break;
+
+                case 'array':
+                    if (array_key_exists($id, $frame)) {
+                        return $frame[$id];
+                    }
+                    break;
             }
         }
 
