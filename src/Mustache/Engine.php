@@ -24,7 +24,7 @@ namespace Mustache;
  */
 class Engine
 {
-    const VERSION        = '2.6.1';
+    const VERSION        = '2.7.0';
     const SPEC_VERSION   = '1.1.2';
 
     const PRAGMA_FILTERS = 'FILTERS';
@@ -193,7 +193,7 @@ class Engine
         if (isset($options['pragmas'])) {
             foreach ($options['pragmas'] as $pragma) {
                 if (!isset(self::$knownPragmas[$pragma])) {
-                    throw new Mustache_Exception_InvalidArgumentException(sprintf('Unknown pragma: "%s".', $pragma));
+                    throw new \Mustache\Exception\InvalidArgumentException(sprintf('Unknown pragma: "%s".', $pragma));
                 }
                 $this->pragmas[$pragma] = true;
             }

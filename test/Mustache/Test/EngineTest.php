@@ -322,6 +322,16 @@ class EngineTest extends \Mustache\Test\FunctionalTestCase
         $this->assertContains("WARNING: Partial not found: \"bar\"", $log);
     }
 
+    /**
+     * @expectedException \Mustache\Exception\InvalidArgumentException
+     */
+    public function testUnknownPragmaThrowsException()
+    {
+        new \Mustache\Engine(array(
+            'pragmas' => array('UNKNOWN')
+        ));
+    }
+
     private function getLoggedMustache($level = \Mustache\Logger::ERROR)
     {
         $name     = tempnam(sys_get_temp_dir(), 'mustache-test');

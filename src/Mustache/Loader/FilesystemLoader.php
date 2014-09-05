@@ -50,7 +50,7 @@ class FilesystemLoader implements \Mustache\Loader
     {
         $this->baseDir = $baseDir;
 
-        if (strpos($this->baseDir, '://') === -1) {
+        if (strpos($this->baseDir, '://') === false) {
             $this->baseDir = realpath($this->baseDir);
         }
 
