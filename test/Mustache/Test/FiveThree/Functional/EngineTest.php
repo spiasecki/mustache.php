@@ -1,4 +1,5 @@
 <?php
+namespace Mustache\Test\FiveThree\Functional;
 
 /*
  * This file is part of Mustache.php.
@@ -13,14 +14,14 @@
  * @group pragmas
  * @group functional
  */
-class Mustache_Test_FiveThree_Functional_EngineTest extends PHPUnit_Framework_TestCase
+class EngineTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @dataProvider pragmaData
      */
     public function testPragmasConstructorOption($pragmas, $helpers, $data, $tpl, $expect)
     {
-        $mustache = new Mustache_Engine(array(
+        $mustache = new \Mustache\Engine(array(
             'pragmas' => $pragmas,
             'helpers' => $helpers,
         ));
@@ -37,13 +38,13 @@ class Mustache_Test_FiveThree_Functional_EngineTest extends PHPUnit_Framework_Te
         );
 
         $data = array(
-            'date' => new DateTime('1/1/2000', new DateTimeZone('UTC')),
+            'date' => new \DateTime('1/1/2000', new \DateTimeZone('UTC')),
         );
 
         $tpl = '{{ date | longdate }}';
 
         return array(
-            array(array(Mustache_Engine::PRAGMA_FILTERS), $helpers, $data, $tpl, '2000-01-01 12:01:00'),
+            array(array(\Mustache\Engine::PRAGMA_FILTERS), $helpers, $data, $tpl, '2000-01-01 12:01:00'),
             array(array(),                                $helpers, $data, $tpl, ''                   ),
         );
     }

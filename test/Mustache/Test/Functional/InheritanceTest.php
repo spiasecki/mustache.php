@@ -1,18 +1,19 @@
 <?php
+namespace Mustache\Test\Functional;
 
 /**
  * @group inheritance
  * @group functional
  */
 
-class Mustache_Test_Functional_InheritanceTest extends PHPUnit_Framework_TestCase
+class InheritanceTest extends \PHPUnit_Framework_TestCase
 {
     private $mustache;
 
     public function setUp()
     {
-        $this->mustache = new Mustache_Engine(array(
-            'pragmas' => array(Mustache_Engine::PRAGMA_BLOCKS),
+        $this->mustache = new \Mustache\Engine(array(
+            'pragmas' => array(\Mustache\Engine::PRAGMA_BLOCKS),
         ));
     }
 
@@ -415,7 +416,7 @@ class Mustache_Test_Functional_InheritanceTest extends PHPUnit_Framework_TestCas
 
     /**
      * @dataProvider getIllegalInheritanceExamples
-     * @expectedException Mustache_Exception_SyntaxException
+     * @expectedException \Mustache\Exception\SyntaxException
      * @expectedExceptionMessage Illegal content in < parent tag
      */
     public function testIllegalInheritanceExamples($partials, $data, $template)

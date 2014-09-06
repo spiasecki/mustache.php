@@ -1,4 +1,5 @@
 <?php
+namespace Mustache\Test\Functional;
 
 /*
  * This file is part of Mustache.php.
@@ -13,14 +14,14 @@
  * @group functional
  * @group partials
  */
-class Mustache_Test_Functional_NestedPartialIndentTest extends PHPUnit_Framework_TestCase
+class NestedPartialIndentTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @dataProvider partialsAndStuff
      */
     public function testNestedPartialsAreIndentedProperly($src, array $partials, $expected)
     {
-        $m = new Mustache_Engine(array(
+        $m = new \Mustache\Engine(array(
             'partials' => $partials
         ));
         $tpl = $m->loadTemplate($src);
