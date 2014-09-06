@@ -150,6 +150,42 @@ class ParserTest extends \PHPUnit_Framework_TestCase
                     ),
                 ),
             ),
+
+            array(
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::VALUE => "  ",
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_DELIM_CHANGE,
+                        \Mustache\Tokenizer::LINE => 0,
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_TEXT,
+                        \Mustache\Tokenizer::LINE => 0,
+                        \Mustache\Tokenizer::VALUE => "  \n",
+                    ),
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_ESCAPED,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '[[',
+                        \Mustache\Tokenizer::CTAG => ']]',
+                        \Mustache\Tokenizer::LINE => 1,
+                    ),
+                ),
+                array(
+                    array(
+                        \Mustache\Tokenizer::TYPE => \Mustache\Tokenizer::T_ESCAPED,
+                        \Mustache\Tokenizer::NAME => 'foo',
+                        \Mustache\Tokenizer::OTAG => '[[',
+                        \Mustache\Tokenizer::CTAG => ']]',
+                        \Mustache\Tokenizer::LINE => 1,
+                    ),
+                ),
+            ),
+
         );
     }
 
