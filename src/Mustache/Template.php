@@ -77,7 +77,7 @@ abstract class Template
      * NOTE: This method is not part of the Mustache.php public API.
      *
      * @param \Mustache\Context $context
-     * @param string           $indent  (default: '')
+     * @param string            $indent  (default: '')
      *
      * @return string Rendered template
      */
@@ -163,9 +163,9 @@ abstract class Template
      *
      * Invoke the value if it is callable, otherwise return the value.
      *
-     * @param mixed            $value
+     * @param mixed             $value
      * @param \Mustache\Context $context
-     * @param string           $indent
+     * @param string            $indent
      *
      * @return string
      */

@@ -680,7 +680,7 @@ class Engine
      * @see \Mustache\Engine::loadPartial
      * @see \Mustache\Engine::loadLambda
      *
-     * @param string         $source
+     * @param string          $source
      * @param \Mustache\Cache $cache  (default: null)
      *
      * @return \Mustache\Template
