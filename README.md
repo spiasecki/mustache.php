@@ -1,11 +1,11 @@
-Mustache.php
-============
+Mustache.php (namespaced version)
+=================================
 
-A [Mustache](http://mustache.github.com/) implementation in PHP.
+A namespaced [Mustache](http://mustache.github.com/) implementation in PHP.
 
-[![Package version](http://img.shields.io/packagist/v/mustache/mustache.svg)](https://packagist.org/packages/mustache/mustache)
-[![Build status](http://img.shields.io/travis/bobthecow/mustache.php/dev.svg)](http://travis-ci.org/bobthecow/mustache.php)
-[![Monthly downloads](http://img.shields.io/packagist/dm/mustache/mustache.svg)](https://packagist.org/packages/mustache/mustache)
+[![Package version](https://img.shields.io/packagist/v/spiasecki/mustache.svg)](https://packagist.org/packages/spiasecki/mustache)
+[![Build status](https://img.shields.io/travis/spiasecki/mustache.php/master.svg)](https://travis-ci.org/spiasecki/mustache.php)
+[![Monthly downloads](https://img.shields.io/packagist/dm/spiasecki/mustache.svg)](https://packagist.org/packages/spiasecki/mustache)
 
 
 Usage
